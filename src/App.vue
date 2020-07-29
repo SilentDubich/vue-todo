@@ -1,10 +1,14 @@
 <template>
     <div id="app">
-        <TodoInput v-bind:add-todo="addTodo" v v-bind:currentText="text" v-bind:updateText="currentText"/>
-        <div v-if="todos.length">
-            <div v-for="todo in todos" :key="todo.id">
+        <TodoInput v-bind:addTodo="addTodo" v v-bind:text="this.$store.state.text" v-bind:updateText="currentText"/>
+        <div :class="$style.container_err" v-if="this.$store.state.error.todo">
+            <p :class="$style.item_err">{{this.$store.state.error.todo}}</p>
+        </div>
+        <div v-if="this.$store.state.todos.length">
+            <div v-for="(todo, i) in this.$store.state.todos" :key="todo.id">
                 <TodoList
                         v-bind:id="todo.id"
+                        v-bind:i="i + 1"
                         v-bind:todo="todo.todo"
                         v-bind:isComplete="todo.isComplete"
                         v-bind:delete-todo="deleteTodo"
@@ -18,56 +22,55 @@
 <script>
     import TodoList from './components/todos'
     import TodoInput from './components/todoInput'
+    import {mapMutations} from "vuex";
 
     export default {
         name: 'App',
-        data: () => ({
-            phone: '9000 000 000',
-            todos: [],
-            text: '',
-            maxID: 0,
-        }),
         methods: {
-            addTodo: function () {
-                console.log(this.todos)
-                let todo = {id: this.maxID + 1, todo: this.text, isComplete: false}
-                localStorage.setItem('id', (this.maxID + 1).toString())
-                localStorage.setItem('todos', JSON.stringify([...this.todos, {id: this.maxID + 1, todo: this.text, isComplete: false}]))
-                this.maxID++
-                this.text = ''
-                return this.todos.push(todo)
+            ...mapMutations([
+                'todoAdd',
+                'completeSet',
+                'setTodos',
+                'textCurrent',
+                'todoDelete'
+            ]),
+            addTodo() {
+                this.todoAdd()
             },
-            setComplete: function (id) {
-                localStorage.setItem('todos', JSON.stringify(this.todos.map(el => el.id === id ? {id: el.id, todo: el.todo, isComplete: !el.isComplete} : el)))
-                return this.todos.map(el => el.id === id ? el.isComplete = !el.isComplete : el)
+            setComplete(id) {
+                this.completeSet(id)
             },
-            currentText: function (text) {
-                return this.text = text
+            currentText(text) {
+                this.textCurrent(text)
             },
-            deleteTodo: function (id) {
-                localStorage.setItem('todos', JSON.stringify(this.todos.filter( el => el.id !== id && el)))
-                return this.todos = this.todos.filter( el => el.id !== id && el)
+            deleteTodo(id) {
+                this.todoDelete(id)
             }
         },
-        mounted() {
-            this.maxID = +localStorage.id && JSON.parse(localStorage.getItem('id')) || 0
-            this.todos = localStorage.todos && JSON.parse(localStorage.getItem('todos'))
+        created() {
+            this.setTodos()
         },
         components: {
-            // HelloWorld,
             TodoList,
             TodoInput
         }
     }
 </script>
 
-<style>
+<style module>
     #app {
-        font-family: Avenir, Helvetica, Arial, sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        text-align: center;
-        color: #2c3e50;
-        margin-top: 60px;
+        margin: 0 auto;
+    }
+    .container_err {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .item_err{
+        border-radius: .25rem;
+        box-shadow: 0 0 .5rem #606060;
+        padding: .25rem .5rem;
+        font-family: Arial, sans-serif;
+        margin: 0 0 1rem 0;
     }
 </style>
